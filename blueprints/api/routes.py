@@ -15,7 +15,6 @@ from utils.validation import normalize_profile_data, require_json_content_type, 
 
 from . import api_bp
 
-
 @api_bp.get("/profile")
 @require_jwt
 def api_get_profile(uid: str):
