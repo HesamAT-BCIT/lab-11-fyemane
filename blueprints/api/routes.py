@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 @api_bp.get("/profile")
 @require_jwt
 def api_get_profile(uid: str):
-    """Return the current user's profile."""
+    logger.info(f"GET /api/profile uid={uid}")
     profile_data = get_profile_data(uid)
+    logger.info("Profile fetched successfully")
     return jsonify({"uid": uid, "profile": profile_data}), 200
-
 
 @api_bp.post("/profile")
 @require_jwt
@@ -45,6 +45,34 @@ def api_create_profile(uid: str):
 
     normalized = normalize_profile_data(first_name, last_name, student_id)
     set_profile(uid, normalized, merge=False)
+    return jsonify({"message": "Profile saved successfully", "profile": normalized}), 200
+
+@api_bp.post("/profile")
+@require_jwt
+def api_create_profile(uid: str):
+    logger.info(f"POST /api/profile uid={uid}")
+
+    content_error = require_json_content_type()
+    if content_error:
+        logger.warning("Rejected profile create due to invalid content type")
+        return content_error
+
+    data = request.get_json(silent=True) or {}
+    logger.info(f"Incoming profile payload: {data}")
+
+    first_name = data.get("first_name", "")
+    last_name = data.get("last_name", "")
+    student_id = data.get("student_id", "")
+
+    error = validate_profile_data(first_name, last_name, student_id)
+    if error:
+        logger.warning(f"Profile validation failed: {error}")
+        return jsonify({"error": error}), 400
+
+    normalized = normalize_profile_data(first_name, last_name, student_id)
+    set_profile(uid, normalized, merge=False)
+    logger.info(f"Profile saved for uid={uid}")
+
     return jsonify({"message": "Profile saved successfully", "profile": normalized}), 200
 
 
@@ -140,14 +168,17 @@ def api_get_sensor_data(uid: str):
 @api_bp.post("/sensor_data")
 @require_api_key
 def api_sensor_data():
-    """Receive sensor data from IoT devices (requires API key authentication)."""
+    logger.info("POST /api/sensor_data received")
+
     content_error = require_json_content_type()
     if content_error:
+        logger.warning("Rejected sensor data due to invalid content type")
         return content_error
 
     data = request.get_json(silent=True) or {}
 
     if not data:
+        logger.warning("Rejected sensor data because request body was empty")
         return jsonify({"error": "Request body cannot be empty"}), 400
 
     doc_id = str(int(time.time() * 1000))
@@ -158,4 +189,5 @@ def api_sensor_data():
         }
     )
 
+    logger.info(f"Sensor data stored with id={doc_id}")
     return jsonify({"message": "Sensor data received successfully", "id": doc_id}), 201
