@@ -1,11 +1,13 @@
 from flask import Flask
-
+from utils.logging_config import setup_logging
 from blueprints.api import api_bp
 from blueprints.auth import auth_bp
 from blueprints.dashboard import dashboard_bp
 from blueprints.profile import profile_bp
 from config import Config
 import firebase  # noqa: F401
+
+setup_logging()
 
 app = Flask(__name__)
 app.config.from_object(Config)
