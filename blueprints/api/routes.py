@@ -26,26 +26,6 @@ def api_get_profile(uid: str):
     logger.info("Profile fetched successfully")
     return jsonify({"uid": uid, "profile": profile_data}), 200
 
-@api_bp.post("/profile")
-@require_jwt
-def api_create_profile(uid: str):
-    """Create/replace the current user's profile from a JSON body."""
-    content_error = require_json_content_type()
-    if content_error:
-        return content_error
-
-    data = request.get_json(silent=True) or {}
-    first_name = data.get("first_name", "")
-    last_name = data.get("last_name", "")
-    student_id = data.get("student_id", "")
-
-    error = validate_profile_data(first_name, last_name, student_id)
-    if error:
-        return jsonify({"error": error}), 400
-
-    normalized = normalize_profile_data(first_name, last_name, student_id)
-    set_profile(uid, normalized, merge=False)
-    return jsonify({"message": "Profile saved successfully", "profile": normalized}), 200
 
 @api_bp.post("/profile")
 @require_jwt
